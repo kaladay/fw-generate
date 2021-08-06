@@ -1,0 +1,11 @@
+# fss-0000
+
+description
+versionTag "1.0"
+historyTimeToLive 90
+deploymentId null
+active false
+setup {}
+setup.asyncBefore false
+setup.asyncAfter false
+initialContext {}

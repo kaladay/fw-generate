@@ -1,0 +1,9 @@
+# fss-0000
+
+description
+deserializeAs CompressFileTask
+inputVariables []
+outputVariable {}
+asyncBefore true
+format GZIP
+container NONE

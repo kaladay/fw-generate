@@ -1,0 +1,8 @@
+# fss-0000
+# This is a special case type.
+
+description
+deserializeAs Subprocess
+inputVariables []
+outputVariable {}
+type EMBEDDED

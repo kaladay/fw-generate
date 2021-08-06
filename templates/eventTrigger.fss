@@ -1,0 +1,6 @@
+# fss-0000
+
+description
+type MESSAGE_CORRELATE
+method POST
+deserializeAs EventTrigger

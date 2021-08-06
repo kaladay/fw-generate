@@ -1,0 +1,6 @@
+# fss-0000
+# This is a special case type.
+
+description
+deserializeAs MoveToNode
+nodes []

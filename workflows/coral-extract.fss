@@ -1,0 +1,163 @@
+# fss-0002 fss-0001 fss-0000
+
+settings:
+  id e45271f6-b882-4b6d-801d-2a5243bdab52
+  name Extract Coral Items
+
+tasks:
+  startEvent             start                "Start"                               7dac827f-890e-45bc-b5be-13baecc9dc2f
+  requestTask            requestCoralExtract  "Get Coral Extract"                   6bd576bb-ec21-4fb4-a7fd-ea01b8e76863
+  scriptTask             prepareExtractItems  "Prepare Initial Data"                9d7bcd5f-9216-4afb-9635-47c86c5d11a3
+  fileTask               loadHoldingsTemplate "Load Holdings Template Data"         0cef6b3d-144c-4b5a-b1dd-68f6fa447d33
+  fileTask               loadInstanceTemplate "Load Instance Template Data"         fdd14bfd-5ff4-488f-9309-38d35d5ed40c
+  databaseConnectionTask connectToLdp         "Connect to LDP"                      0a5a9d56-1578-4a70-9015-b715b8fec91b
+  databaseQueryTask      clearFromLDP         "Clear Coral Items in LDP"            7c029ff5-4106-4214-987b-77be79141e12
+  subprocess             saveToLDPSubprocess  "Save Coral Items to LDP Subprocess"  02155701-d1d5-4a33-b8fc-8057967bcc4f
+  databaseQueryTask      readFromLdp          "Read Coral Items from LDP"           1b24cb49-bbbc-4b3d-9351-502b86aa790e
+  databaseDisconnectTask disconnectFromLDP    "Disconnect from LDP"                 e3a30113-53ee-46ce-8404-1ffbb3f53bec
+  requestTask            okapiLogin           "Okapi Login"                         88ebbebe-5992-4262-bc7b-269d6be38885
+  subprocess             coralItemsSubprocess "Process Coral Items Subprocess"      a74c0421-5d97-4608-bb85-eb14adebd23d
+  endEvent               end                  "End"                                 8c9e268e-6302-44c9-8bdf-4f5830c26deb
+
+# FIXME: subprocess support is not yet implemented.
+tasks-saveToLDPSubprocess:
+  databaseQueryTask saveToLDP "Save Coral Item to LDP"
+
+tasks-coralItemsSubprocess:
+  scriptTask  buildInstance "Build Instance"
+  requestTask saveInstance  "Save Instance"
+  scriptTask  buildHoldings "Build Holdings"
+  requestTask saveHoldings  "Save Holdings"
+
+start:
+  type SCHEDULED
+  expression 0 0 5 1/1 * ? *
+
+requestCoralExtract.request:
+  url {{coral-url}}/folio_utilities/coral_extract.php
+  method GET
+  accept text/plain
+
+requestCoralExtract.outputVariable:
+  key coralExtractResponse
+  type LOCAL
+
+prepareExtractItems:
+  code prepareExtractItems.js
+
+loadHoldingsTemplate:
+  path /mnt/workflows/coral-extract/holdings_template.json
+  op READ
+
+loadHoldingsTemplate.outputVariable:
+  key holdingsTemplate
+  type PROCESS
+
+loadInstanceTemplate:
+  path /mnt/workflows/coral-extract/instance_template.json
+  op READ
+
+loadInstanceTemplate.outputVariable:
+  key instanceTemplate
+  type PROCESS
+
+connectToLdp:
+  designation ldp
+  url {{{ldp-url}}}
+  username {{{ldp-user}}}
+  password {{{ldp-password}}}
+
+clearFromLDP:
+  designation ldp
+  query TRUNCATE TABLE dev.coral_extract
+
+saveToLDPSubprocess:
+  description Subprocess to save extracted Coral items to the LDP.
+
+saveToLDPSubprocess.inputVariables:
+  key extractItems
+  type PROCESS
+  spin true
+
+saveToLDPSubprocess.loopRef:
+  dataInputRefExpression ${extractItems.elements()}
+  inputDataName extractItem
+  parallel false
+
+# (TODO: consider defaulting subprocess start property "type" to "NONE"
+saveToLDPSubprocessStart:
+  type NONE
+
+saveToLDP:
+  designation ldp
+  query INSERT INTO dev.coral_extract (coralId, contributor, title, publisher, summary, natureOfContentTerm, electronicAccess, status) values (${extractItem.coralId}, '${extractItem.contributor}', '${extractItem.title}', '${extractItem.publisher}', '${extractItem.summary}', '${extractItem.natureOfContentTerm}', '${extractItem.electronicAccess}', '${extractItem.status}')
+
+readFromLdp:
+  designation ldp
+  query SELECT c.* FROM dev.coral_extract c WHERE status = 'ACTIVE' AND natureOfContentTerm IN ('Database', 'Dataset', 'Proceedings', 'Tool', 'Website') AND title IS NOT NULL AND electronicAccess IS NOT NULL AND coralId IN (SELECT coralid FROM dev.coral_extract EXCEPT SELECT cast(substring(uri, position('resource=' IN uri)+9) AS integer) FROM folio_reporting.instance_electronic_access WHERE uri LIKE '%coral.library.tamu.edu/resourcelink.php?resource=%')
+
+disconnectFromLDP:
+  designation ldp
+
+okapiLogin.request:
+  url {{okapi}}/authn/login
+  method POST
+  contentType application/json
+  accept application/json
+  bodyTemplate {\"username\": \"{{{username}}}\", \"password\": \"{{{password}}}\"}
+
+# FIXME: add support for having each distinct list represent a different set (currently it just combines them).
+okapiLogin.inputVariables:
+  key username
+  type PROCESS
+
+okapiLogin.inputVariables:
+  key password
+  type PROCESS
+
+okapiLogin.headerOutputVariables:
+  key X-Okapi-Token
+  type PROCESS
+
+okapiLogin.outputVariable:
+  key loginResponse
+  type PROCESS
+
+coralItemsSubprocess.loopRef:
+  dataInputRefExpression ${extractItems.elements()}
+  inputDataName extractItem
+  parallel false
+
+coralItemsSubprocessStart:
+  type NONE
+
+buildInstance:
+  code buildInstance.js
+
+saveInstance.request:
+  url {{okapi}}/instance-storage/instances
+  method POST
+  accept application/json
+  bodyTemplate ${instance}
+
+# FIXME: there currently isn't support for nested structures like: [ {} ].
+saveInstance[].inputVariables:
+  key instance
+  type LOCAL
+  spin true
+  asJson true
+
+buildHoldings:
+  code buildHoldings.js
+
+saveHoldings.request:
+  url {{okapi}}/holdings-storage/holdings
+  method POST
+  accept application/json
+  bodyTemplate ${holdings}
+
+saveHoldings[].inputVariables:
+  key holdings
+  type LOCAL
+  spin true
+  asJson true

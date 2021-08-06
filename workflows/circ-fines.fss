@@ -1,0 +1,41 @@
+# fss-0002 fss-0001 fss-0000
+
+settings:
+  name Circulation Daily Fees/Fines Paid
+
+tasks:
+  databaseConnectionTask connect    "Connect LDP"
+  databaseQueryTask      query      "Query Daily Fees/Fines Paid from LDP"
+  emailTask              email      "Send Query Daily Fees/Fines Paid Email"
+  fileTask               delete     "Delete Daily Fees/Fines Paid TSV"
+  databaseDisconnectTask disconnect "Disconnect LDP"
+
+start:
+  type SCHEDULED
+  expression 0 0 * * * ?
+
+connect:
+  designation ldp
+  url {{{ldp-url}}}
+  username {{{ldp-user}}}
+  password {{{ldp-password}}}
+
+disconnect:
+  designation ldp
+
+query:
+  outputPath /mnt/workflows/circ-fines/feefines.tsv
+  resultType TSV
+  designation ldp
+  query SELECT DISTINCT isp.name AS service_point, actions.payment_method AS method, users.barcode, concat(users.data->'personal'->>'lastName', ' ', users.data->'personal'->>'firstName') AS name, to_timestamp(actions.date_action::text,'YYYY-MM-DD HH24:MI:SS') at time zone 'America/Chicago', actions.source AS operator, actions.amount_action AS amount, actions.comments AS comments, actions.id FROM public.audit_circulation_logs logs, public.inventory_service_points isp, public.user_users users, public.feesfines_accounts accounts, public.feesfines_feefineactions actions WHERE actions.type_action IN ('Paid fully', 'Paid partially') AND isp.id = logs.service_point_id AND logs.data->'linkToIds'->>'feeFineId' = accounts.id AND actions.user_id = users.id AND actions.account_id = accounts.id AND cast(logs.date AS date) >= current_date-1 AND isp.name in ('Ask Us Desk (Evans)', 'Business Library Circulation', 'InterLibrary Loan Dept. (Evans)', 'Maps & GIS', 'Media and Reserves', 'PSEL Circulation Desk') ORDER BY to_timestamp(actions.date_action::text, 'YYYY-MM-DD HH24:MI:SS') at time zone 'America/Chicago' DESC
+
+email:
+  mailTo {{circ-fines-mail-to}}
+  mailFrom {{circ-fines-mail-from}}
+  mailSubject Daily Fees/Fines Paid Report
+  mailText Daily Fees/Fines Paid TSV file attached
+  attachmentPath /mnt/workflows/circ-fines/feefines.tsv
+
+delete:
+  path /mnt/workflows/circ-fines/feefines.tsv
+  op DELETE

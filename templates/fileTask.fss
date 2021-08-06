@@ -1,0 +1,7 @@
+# fss-0000
+
+description
+deserializeAs FileTask
+inputVariables []
+outputVariable {}
+asyncBefore true
