@@ -3,7 +3,7 @@
 #
 # Program Requirements:
 # - bash 4.x or higher.
-# - coreutils that provides dirname.
+# - coreutils that provides dirname (can be optional if include paths below are changed to hardcoded paths).
 # - grep 3.x or higher (with PCRE support enabled).
 # - fss_basic_list_read 0.5.4 or higher.
 # - fss_extended_read 0.5.4 or higher.
