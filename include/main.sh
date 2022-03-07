@@ -94,7 +94,7 @@ main() {
         if [[ $grab_next == "input_directory" ]] ; then
 
           # Use grep to avoid needing something like awk or sed, but this simple strategy cannot handle directories with only whitespace in their names"
-          grab_next=$(echo "$parameter" | grep -Po '[^/]+')
+          grab_next=$(echo "$parameter" | grep -sPo '[^/]+')
 
           if [[ $grab_next == "" ]] ; then
             directory_input=
@@ -116,7 +116,7 @@ main() {
         elif [[ $grab_next == "output_directory" ]] ; then
 
           # Use grep to avoid needing something like awk or sed, but this simple strategy cannot handle directories with only whitespace in their names"
-          grab_next=$(echo "$parameter" | grep -Po '[^/]+')
+          grab_next=$(echo "$parameter" | grep -sPo '[^/]+')
 
           if [[ $grab_next == "" ]] ; then
             directory_output=
@@ -216,7 +216,7 @@ main() {
       for j in ${directory_input}workflows/*.fss ; do
         if [[ $j == "${directory_input}workflows/*.fss" ]] ; then continue ; fi
 
-        echo_out "  - $(echo "$j" | grep -Po '[^/]+(?=\.fss)')"
+        echo_out "  - $(echo "$j" | grep -sPo '[^/]+(?=\.fss)')"
       done
 
       echo_out
