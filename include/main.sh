@@ -26,6 +26,7 @@ main() {
 
   # generic
   local -i i=0
+  local j=
 
   # reset, title, error, warning, highligh, notice, important.
   local c_r="\\033[0m"
@@ -91,10 +92,47 @@ main() {
         fi
       else
         if [[ $grab_next == "input_directory" ]] ; then
-          directory_input=$(echo "$parameter" | sed -e 's|//*|/|g' -e 's|/*$|/|')
+
+          # Use grep to avoid needing something like awk or sed, but this simple strategy cannot handle directories with only whitespace in their names"
+          grab_next=$(echo "$parameter" | grep -Po '[^/]+')
+
+          if [[ $grab_next == "" ]] ; then
+            directory_input=
+          else
+            for j in $grab_next ; do
+              if [[ $j != "." ]] ; then
+                directory_input=/
+              fi
+
+              break
+            done
+
+            for j in $grab_next ; do
+              directory_input="$directory_input$j/"
+            done
+          fi
+
           grab_next=
         elif [[ $grab_next == "output_directory" ]] ; then
-          directory_output=$(echo "$parameter" | sed -e 's|//*|/|g' -e 's|/*$|/|')
+
+          # Use grep to avoid needing something like awk or sed, but this simple strategy cannot handle directories with only whitespace in their names"
+          grab_next=$(echo "$parameter" | grep -Po '[^/]+')
+
+          if [[ $grab_next == "" ]] ; then
+            directory_output=
+          else
+            for j in $grab_next ; do
+              if [[ $j != "." ]] ; then
+                directory_output=/
+              fi
+
+              break
+            done
+
+            for j in $grab_next ; do
+              directory_output="$directory_input$j/"
+            done
+          fi
           grab_next=
         else
           break
@@ -157,20 +195,6 @@ main() {
     fi
   fi
 
-  if [[ $get_help -eq 0 && $get_version -eq 0 ]] ; then
-    if [[ $workflow == "" ]] ; then
-      echo_error_out "No workflow is given."
-      let failure=1
-    fi
-
-    workflow_file=${directory_input}workflows/${workflow}.fss
-
-    if [[ ! -r $workflow_file ]] ; then
-      echo_error_out "The workflow file '$c_n$workflow_file$c_e' is not found or is not readable."
-      let failure=1
-    fi
-  fi
-
   if [[ $get_help -eq 1 ]] ; then
     print_help
     main_cleanup
@@ -181,6 +205,33 @@ main() {
     print_version
     main_cleanup
     return 0
+  fi
+
+  if [[ $workflow == "" ]] ; then
+    echo_error_out "No workflow is given."
+
+    if [[ ( $output_mode -eq 0 || $output_mode -eq 1 ) ]] ; then
+      echo_out_e "${c_e}The following workflows are available (under $c_n${directory_input}workflows/$c_e):${c_r}"
+
+      for j in ${directory_input}workflows/*.fss ; do
+        if [[ $j == "${directory_input}workflows/*.fss" ]] ; then continue ; fi
+
+        echo_out "  - $(echo "$j" | grep -Po '[^/]+(?=\.fss)')"
+      done
+
+      echo_out
+    fi
+
+    let failure=1
+  fi
+
+  if [[ $failure -eq 0 ]] ; then
+    workflow_file=${directory_input}workflows/${workflow}.fss
+
+    if [[ ! -r $workflow_file ]] ; then
+      echo_error_out "The workflow file '$c_n$workflow_file$c_e' is not found or is not readable."
+      let failure=1
+    fi
   fi
 
   if [[ $failure -eq 0 ]] ; then

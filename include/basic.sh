@@ -12,14 +12,17 @@ unload_basic_sh() {
   unset unload_basic_sh
 }
 
+# Print an error message without extra leading and trailing newlines lines.
 echo_error() {
   if [[ $output_mode -eq 0 || $output_mode -eq 1 ]] ; then
     echo -e "${c_e}ERROR: $1$c_r"
   fi
 }
 
+# Print an error message with extra leading and trailing newlines lines.
 echo_error_out() {
   if [[ $output_mode -eq 0 || $output_mode -eq 1 ]] ; then
+    echo
     echo -e "${c_e}ERROR: $1$c_r"
     echo
   fi

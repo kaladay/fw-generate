@@ -3,12 +3,14 @@
 #
 # Program Requirements:
 # - bash 4.x or higher.
-# - coreutils that provides dirname (can be optional if include paths below are changed to hardcoded paths).
 # - grep 3.x or higher (with PCRE support enabled).
 # - fss_basic_list_read 0.5.4 or higher.
 # - fss_extended_read 0.5.4 or higher.
 # - fss_basic_read 0.5.4 or higher.
-# - util-linux that provides uuidgen (should be optional if all workflows explicitly define UUIDs).
+#
+# Optional Dependencies:
+# - coreutils that provides dirname.
+# - util-linux that provides uuidgen (optional if all workflows explicitly define UUIDs).
 #
 # This script is meant to be operated within the directory that it creates the templates and will also expect any individual parts to reside within there (include files, templates, etc..).
 #
@@ -90,11 +92,19 @@
 #   Whereas "." is specifically used to designated an array or map within in a JSON-like manner.
 #
 
-source $(dirname $0)/include/main.sh
-source $(dirname $0)/include/basic.sh
-source $(dirname $0)/include/json.sh
-source $(dirname $0)/include/template.sh
-source $(dirname $0)/include/workflow.sh
+if [[ $(type -p dirname) == "" ]] ; then
+  source include/main.sh
+  source include/basic.sh
+  source include/json.sh
+  source include/template.sh
+  source include/workflow.sh
+else
+  source $(dirname $0)/include/main.sh
+  source $(dirname $0)/include/basic.sh
+  source $(dirname $0)/include/json.sh
+  source $(dirname $0)/include/template.sh
+  source $(dirname $0)/include/workflow.sh
+fi
 
 # this uses $@ in quotes to preserve whitespace in each parameter passed to the script and prevent them from being expanded into different parameters.
 main "$@"
