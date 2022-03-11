@@ -2,6 +2,7 @@
 # fw-generate script to be included.
 
 unload_workflow_sh() {
+
   unset load_workflow
   unset create_workflow
   unset create_workflow_nodes
@@ -22,6 +23,7 @@ load_workflow() {
   workflow_objects_settings=
 
   for object in $workflow_objects ; do
+
     if [[ $object == "settings" || $(echo -n $object | grep -sPo "settings\.[\w+-]+") != "" ]] ; then
       workflow_objects_settings="$workflow_objects_settings$object "
     fi
@@ -69,6 +71,7 @@ load_workflow() {
 
   # create tasks.
   while [[ $i -lt $tasks_total ]] ; do
+
     tasks_task["$j"]=$(fss_basic_list_read -cqn tasks $workflow_file | fss_extended_read -oqa $i)
     if [[ $? -ne 0 ]] ; then let failure=1 ; break ; fi
 
@@ -210,6 +213,7 @@ create_workflow() {
 
   let i=0
   while [[ $i -lt $tasks_total ]] ; do
+
     id=${tasks_uuid["$i"]}
     type=${tasks_task["$i"]}
 
@@ -232,6 +236,7 @@ create_workflow() {
 
     if [[ $? -ne 0 ]] ; then
       echo_error_out "Failed to create the setup JSON file: '$c_n${directory_generated}setup.json$c_e'."
+
       return 1
     fi
   fi
@@ -240,6 +245,7 @@ create_workflow() {
 
   if [[ $? -ne 0 ]] ; then
     echo_error_out "Failed to read the workflow file: '$c_n$workflow_file$c_e'."
+
     return 1
   fi
 
@@ -248,6 +254,7 @@ create_workflow() {
 
     if [[ $? -ne 0 ]] ; then
       echo_error_out "Failed to create the triggers directory: '$c_n${directory_generated}triggers$c_e'."
+
       return 1
     fi
 
@@ -266,6 +273,7 @@ create_workflow_nodes() {
   local name=
 
   while [[ $i -lt $tasks_total ]] ; do
+
     local -a properties=()
     local -a values=()
     local -a depths=()
@@ -328,6 +336,7 @@ prepare_workflow_triggers() {
   failure=$?
 
   while [[ $i -lt $lines && $failure -eq 0 ]] ; do
+
     local -a properties=()
     local -a values=()
     local -a depths=()

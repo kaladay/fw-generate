@@ -2,6 +2,7 @@
 # fw-generate script to be included.
 
 unload_template_sh() {
+
   unset load_template_task
   unset load_template_task_workflow
   unset find_last_array_or_map
@@ -47,6 +48,7 @@ load_template_task() {
     fi
 
     while [[ $i -lt $template_lines ]] ; do
+
       template_object=$(fss_basic_read -oqae $i $template_file)
       failure_template=$?
       if [[ $failure_template -ne 0 ]] ; then break ; fi
@@ -266,6 +268,7 @@ load_template_task() {
         else
           # unknown/unsupported data structure.
           let i++
+
           continue
         fi
       fi
@@ -308,11 +311,13 @@ find_last_array_or_map() {
   local object=
 
   while [[ $j -lt $lines ]] ; do
+
     object=$(fss_basic_read -oqae $j $file)
     if [[ $? -ne 0 ]] ; then return 1 ; fi
 
     if [[ $(echo -n "$object" | grep -sPo "^$match\.") == "" && $object != "$match" ]] ; then
       let j--
+
       break;
     fi
 
@@ -333,12 +338,14 @@ load_template_task_workflow() {
 
   # Build list of workflow objects that are associated with the current task.
   for workflow_object in $workflow_objects ; do
+
     if [[ $workflow_object == "$machine" || $(echo -n $workflow_object | grep -sPo "\b$machine\.[\w+-]+($|\.$)") != "" ]] ; then
       workflow_objects_task="$workflow_objects_task$workflow_object "
     fi
   done
 
   for workflow_object in $workflow_objects_task ; do
+
     workflow_lines=$(fss_basic_list_read -cqnet $workflow_object $workflow_file)
     failure_workflow=$?
     if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
@@ -346,6 +353,7 @@ load_template_task_workflow() {
     if [[ $(echo -n "$workflow_object" | grep -sPo "\.") == "" ]] ; then
       let i=0
       while [[ $i -lt $workflow_lines ]] ; do
+
         object=$(fss_basic_list_read -cqnle $workflow_object $i $workflow_file | fss_basic_read -oq)
         failure_workflow=$?
         if [[ $failure_workflow -ne 0 ]] ; then break ; fi

@@ -2,6 +2,7 @@
 # fw-generate script to be included.
 
 unload_basic_sh() {
+
   unset echo_error
   unset echo_error_out
   unset echo_out
@@ -14,6 +15,7 @@ unload_basic_sh() {
 
 # Print an error message without extra leading and trailing newlines lines.
 echo_error() {
+
   if [[ $output_mode -eq 0 || $output_mode -eq 1 ]] ; then
     echo -e "${c_e}ERROR: $1$c_r"
   fi
@@ -21,6 +23,7 @@ echo_error() {
 
 # Print an error message with extra leading and trailing newlines lines.
 echo_error_out() {
+
   if [[ $output_mode -eq 0 || $output_mode -eq 1 ]] ; then
     echo
     echo -e "${c_e}ERROR: $1$c_r"
@@ -29,24 +32,28 @@ echo_error_out() {
 }
 
 echo_out() {
+
   if [[ $output_mode -eq 0 ]] ; then
     echo "$1"
   fi
 }
 
 echo_out1() {
+
   if [[ $output_mode -eq 0 || $output_mode -eq 1 ]] ; then
     echo "$1"
   fi
 }
 
 echo_out_e() {
+
   if [[ $output_mode -eq 0 ]] ; then
     echo -e "$1"
   fi
 }
 
 print_help() {
+
   echo_out
   echo_out_e "${c_t}FW-Registry Workflow Generation Helper Script$c_r"
   echo_out_e "  ${c_n}Version $version$c_r"
@@ -68,6 +75,7 @@ print_help() {
 }
 
 print_version() {
+
   echo_out "$version"
 }
 

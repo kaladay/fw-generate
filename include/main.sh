@@ -1,7 +1,7 @@
 #!/bin/bash
-# fw-generate script to be included.
 
 unload_main_sh() {
+
   unset main
   unset main_generate
   unset main_cleanup
@@ -58,6 +58,7 @@ main() {
 
   if [[ $parameters_total -gt 0 ]] ; then
     while [[ $i -lt $parameters_total ]] ; do
+
       let i++
       parameter="${!i}"
 
@@ -169,41 +170,17 @@ main() {
     directory_output="./"
   fi
 
-  directory_generated="${directory_output}generated/"
-
-  if [[ $get_help -eq 0 && $get_version -eq 0 ]] ; then
-    if [[ ! -d $directory_output || ! -x $directory_output ]] ; then
-      echo_error_out "The output directory '$c_n$directory_output$c_e' is not found, is not executable, or is not a directory."
-      let failure=1
-    fi
-
-    if [[ ! -d $directory_generated || ! -x $directory_generated ]] ; then
-      echo_error_out "The generated directory '$c_n$directory_generated$c_e' is not found, is not executable, or is not a directory."
-      let failure=1
-    fi
-
-    if [[ $failure -eq 0 ]] ; then
-      directory_generated="${directory_generated}$workflow/"
-      if [[ ! -d $directory_generated ]] ; then
-        mkdir $directory_generated
-
-        if [[ $? -ne 0 ]] ; then
-          echo_error_out "Failed to create the directory '$c_n$directory_generated$c_e'."
-          let failure=1
-        fi
-      fi
-    fi
-  fi
-
   if [[ $get_help -eq 1 ]] ; then
     print_help
     main_cleanup
+
     return 0
   fi
 
   if [[ $get_version -eq 1 ]] ; then
     print_version
     main_cleanup
+
     return 0
   fi
 
@@ -214,6 +191,7 @@ main() {
       echo_out_e "${c_e}The following workflows are available (under $c_n${directory_input}workflows/$c_e):${c_r}"
 
       for j in ${directory_input}workflows/*.fss ; do
+
         if [[ $j == "${directory_input}workflows/*.fss" ]] ; then continue ; fi
 
         echo_out "  - $(echo "$j" | grep -sPo '[^/]+(?=\.fss)')"
@@ -231,6 +209,25 @@ main() {
     if [[ ! -r $workflow_file ]] ; then
       echo_error_out "The workflow file '$c_n$workflow_file$c_e' is not found or is not readable."
       let failure=1
+    fi
+  fi
+
+  directory_generated="${directory_output}generated/"
+
+  if [[ $failure -eq 0 && -e $directory_generated && ( ! -d $directory_generated && ! -x $directory_generated ) ]] ; then
+    echo_error_out "The output directory '$c_n$directory_output$c_e' is found but is not executable or is not a directory."
+    let failure=1
+  fi
+
+  if [[ $failure -eq 0 ]] ; then
+    directory_generated="${directory_generated}$workflow/"
+    if [[ ! -d $directory_generated ]] ; then
+      mkdir -p $directory_generated
+
+      if [[ $? -ne 0 ]] ; then
+        echo_error_out "Failed to create the directory '$c_n$directory_generated$c_e'."
+        let failure=1
+      fi
     fi
   fi
 
@@ -278,11 +275,13 @@ main_generate() {
   if [[ $? -ne 0 ]] ; then return 1 ; fi
 
   create_workflow
+
   return $?
 }
 
 # cleanup at end of program to prevent these functions from being available outside of the script.
 main_cleanup() {
+
   unload_main_sh
   unload_basic_sh
   unload_json_sh
