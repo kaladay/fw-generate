@@ -65,12 +65,19 @@ print_help() {
   echo_out_e "  $c_i$script_pathname$c_r ${c_n}[${c_r}options${c_n}]${c_r} ${c_n}<${c_r}workflow${c_n}>${c_r}"
   echo_out
   echo_out_e "${c_h}Options:$c_r"
-  echo_out_e " -${c_i}h${c_r}, --${c_i}help${c_r}              Print this help screen."
+  echo_out_e " -${c_i}h${c_r}, --${c_i}help${c_r}      Print this help screen."
+  echo_out_e " +${c_i}d${c_r}, ++${c_i}dark${c_r}      Output using colors that show up better on dark backgrounds."
+  echo_out_e " +${c_i}l${c_r}, ++${c_i}light${c_r}     Output using colors that show up better on light backgrounds."
+  echo_out_e " +${c_i}n${c_r}, ++${c_i}no_color${c_r}  Do not print using color."
+  echo_out_e " +${c_i}Q${c_r}, ++${c_i}quiet${c_r}     Decrease verbosity, silencing most output."
+  echo_out_e " +${c_i}E${c_r}, ++${c_i}quiet${c_r}     Decrease verbosity, using only error output."
+  echo_out_e " +${c_i}N${c_r}, ++${c_i}normal${c_r}    Set verbosity to normal."
+  echo_out_e " +${c_i}V${c_r}, ++${c_i}verbose${c_r}   Increase verbosity beyond normal output."
+  echo_out_e " +${c_i}D${c_r}, ++${c_i}debug${c_r}     Enable debugging, significantly increasing verbosity beyond normal output."
+  echo_out_e " +${c_i}v${c_r}, ++${c_i}version${c_r}   Print the version number."
+  echo_out
   echo_out_e " -${c_i}i${c_r}, --${c_i}input_directory${c_r}   Specify a custom input directory (currently: '$c_n$directory_input$c_r')."
   echo_out_e " -${c_i}o${c_r}, --${c_i}output_directory${c_r}  Specify a custom output directory (currently: '$c_n$directory_output$c_r')."
-  echo_out_e " -${c_i}n${c_r}, --${c_i}no_color${c_r}          Do not apply color changes when printing output to screen."
-  echo_out_e " -${c_i}s${c_r}, --${c_i}silent${c_r}            Do not print to the screen (specify once to allow for error output and twice to suppress error output)."
-  echo_out_e " +${c_i}v${c_r}, ++${c_i}version${c_r}           Print the version number."
   echo_out
 }
 

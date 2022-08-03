@@ -19,7 +19,7 @@ load_workflow() {
   local -i j=0
   local -i failure=0
 
-  workflow_objects=$(fss_basic_list_read -oq $workflow_file)
+  workflow_objects=$(fss_basic_list_read +Q -o $workflow_file)
   workflow_objects_settings=
 
   for object in $workflow_objects ; do
@@ -29,7 +29,7 @@ load_workflow() {
     fi
   done
 
-  let tasks_total=$(fss_basic_list_read -cqn tasks $workflow_file | fss_extended_read -tq)
+  let tasks_total=$(fss_basic_list_read +Q -cn tasks $workflow_file | fss_extended_read -tq)
 
   if [[ $tasks_total -eq 0 ]] ; then
     echo_error_out "The workflow '$c_n$workflow$c_e' does not have any tasks."
@@ -38,7 +38,7 @@ load_workflow() {
   fi
 
   # create start task.
-  existing=$(fss_basic_list_read -cqn tasks $workflow_file | fss_extended_read -oqnt startEvent)
+  existing=$(fss_basic_list_read +Q -cn tasks $workflow_file | fss_extended_read -oqnt startEvent)
 
   if [[ $? -ne 0 ]] ; then
     echo_error_out "Failed to read the workflow '$c_n$workflow$c_e'."
@@ -54,7 +54,7 @@ load_workflow() {
     tasks_human["0"]="Start"
     task=${tasks_machine["0"]}
 
-    id=$(fss_basic_list_read -cqn ${tasks_machine["0"]} $workflow_file | fss_basic_read -cqns id 0)
+    id=$(fss_basic_list_read +Q -cn ${tasks_machine["0"]} $workflow_file | fss_basic_read +Q -cns id 0)
 
     if [[ $? -ne 0 ]] ; then
       echo_error_out "Failed to read the (optional) '{c_n}id$c_e' tasks Object (for $task) from the workflow '$c_n$workflow$c_e'."
@@ -72,22 +72,22 @@ load_workflow() {
   # create tasks.
   while [[ $i -lt $tasks_total ]] ; do
 
-    tasks_task["$j"]=$(fss_basic_list_read -cqn tasks $workflow_file | fss_extended_read -oqa $i)
+    tasks_task["$j"]=$(fss_basic_list_read +Q -cn tasks $workflow_file | fss_extended_read -oqa $i)
     if [[ $? -ne 0 ]] ; then let failure=1 ; break ; fi
 
-    tasks_machine["$j"]=$(fss_basic_list_read -cqn tasks $workflow_file | fss_extended_read -cqas $i 0)
+    tasks_machine["$j"]=$(fss_basic_list_read +Q -cn tasks $workflow_file | fss_extended_read -cqas $i 0)
     if [[ $? -ne 0 ]] ; then let failure=1 ; break ; fi
 
-    tasks_human["$j"]=$(fss_basic_list_read -cqn tasks $workflow_file | fss_extended_read -cqas $i 1)
+    tasks_human["$j"]=$(fss_basic_list_read +Q -cn tasks $workflow_file | fss_extended_read -cqas $i 1)
     if [[ $? -ne 0 ]] ; then let failure=1 ; break ; fi
 
-    id=$(fss_basic_list_read -cqn tasks $workflow_file | fss_extended_read -cqas $i 2)
+    id=$(fss_basic_list_read +Q -cn tasks $workflow_file | fss_extended_read -cqas $i 2)
     if [[ $? -ne 0 ]] ; then let failure=1 ; break ; fi
 
     task=${tasks_machine["$j"]}
 
     if [[ $id == "" ]] ; then
-      id=$(fss_basic_list_read -cqn ${tasks_machine["$j"]} $workflow_file | fss_basic_read -cqns id 0)
+      id=$(fss_basic_list_read +Q -cn ${tasks_machine["$j"]} $workflow_file | fss_basic_read +Q -cns id 0)
 
       if [[ $? -ne 0 ]] ; then
         echo_error_out "Failed to read the (optional) '{c_n}id$c_e' tasks Object (for $task) from the workflow '$c_n$workflow$c_e'."
@@ -121,7 +121,7 @@ load_workflow() {
   fi
 
   # create stop task.
-  existing=$(fss_basic_list_read -cqn tasks $workflow_file | fss_extended_read -oqnt endEvent)
+  existing=$(fss_basic_list_read +Q -cn tasks $workflow_file | fss_extended_read -oqnt endEvent)
 
   if [[ $? -ne 0 ]] ; then
     echo_error_out "Failed to read the workflow '$c_n$workflow$c_e'."
@@ -135,7 +135,7 @@ load_workflow() {
     tasks_human["$j"]="End"
     task=${tasks_machine["$j"]}
 
-    id=$(fss_basic_list_read -cqn ${tasks_machine["$j"]} $workflow_file | fss_basic_read -cqns id 0)
+    id=$(fss_basic_list_read +Q -cn ${tasks_machine["$j"]} $workflow_file | fss_basic_read +Q -cns id 0)
 
     if [[ $? -ne 0 ]] ; then
       echo_error_out "Failed to read the (optional) '{c_n}id$c_e' tasks Object (for $task) from the workflow '$c_n$workflow$c_e'."
@@ -175,7 +175,7 @@ create_workflow() {
   local ignore=
 
   # ID, if supplied is used, otherwise is generated.
-  id=$(fss_basic_list_read -cqn settings $workflow_file | fss_basic_read -cqns id 0)
+  id=$(fss_basic_list_read +Q -cn settings $workflow_file | fss_basic_read +Q -cns id 0)
 
   if [[ $? -ne 0 ]] ; then
     echo_error_out "Failed to read the (optional) '{c_n}id$c_e' settings Object from the workflow '$c_n$workflow$c_e'."
@@ -188,7 +188,7 @@ create_workflow() {
   fi
 
   # The name, if supplied is used, otherwise is created from the name given on the program input.
-  name=$(fss_basic_list_read -cqn settings $workflow_file | fss_basic_read -cqns name 0)
+  name=$(fss_basic_list_read +Q -cn settings $workflow_file | fss_basic_read +Q -cns name 0)
 
   if [[ $? -ne 0 ]] ; then
     echo_error_out "Failed to read the (optional) '{c_n}name$c_e' settings Object from the workflow '$c_n$workflow$c_e'."
@@ -202,14 +202,14 @@ create_workflow() {
 
   echo_out "Generating Workflow: $id, \"$name\""
 
-  prepare_json_line 0 "id" "$id"
-  prepare_json_line 0 "name" "$name"
+  prepare_json_line 0 "value" "id" "$id"
+  prepare_json_line 0 "value" "name" "$name"
 
   load_template_task "workflow" "settings"
   if [[ $? -ne 0 ]] ; then return 1 ; fi
 
   # Nodes are generated and are not loaded from the workflow template.
-  prepare_json_line -1 "nodes" "array"
+  prepare_json_line 0 "array" "nodes"
 
   let i=0
   while [[ $i -lt $tasks_total ]] ; do
@@ -217,13 +217,13 @@ create_workflow() {
     id=${tasks_uuid["$i"]}
     type=${tasks_task["$i"]}
 
-    prepare_json_line -2 "" "{{mod-workflow}}/$type/$id"
+    prepare_json_line 1 "value" "" "{{mod-workflow}}/$type/$id"
     if [[ $? -ne 0 ]] ; then return 1 ; fi
 
     let i++
   done
 
-  prepare_json_line_array_or_map_end -1 "array"
+  prepare_json_line_array_or_map_end 0 "array"
 
   write_json_file "${directory_generated}workflow.json"
   if [[ $? -ne 0 ]] ; then return 1 ; fi
@@ -241,7 +241,7 @@ create_workflow() {
     fi
   fi
 
-  data=$(fss_basic_list_read -oqnt triggers $workflow_file)
+  data=$(fss_basic_list_read +Q -ont triggers $workflow_file)
 
   if [[ $? -ne 0 ]] ; then
     echo_error_out "Failed to read the workflow file: '$c_n$workflow_file$c_e'."
@@ -311,8 +311,8 @@ prepare_workflow_item() {
 
   echo_out "Generating Item: $id, $type, $machine, \"$name\""
 
-  prepare_json_line 0 "id" "$id"
-  prepare_json_line 0 "name" "$name"
+  prepare_json_line 0 "value" "id" "$id"
+  prepare_json_line 0 "value" "name" "$name"
 
   load_template_task "$type" "$machine"
   if [[ $? -ne 0 ]] ; then return 1 ; fi
@@ -332,7 +332,7 @@ prepare_workflow_triggers() {
   local -i failure=0
   local -i i=0
 
-  lines=$(fss_basic_list_read -cqn triggers $workflow_file | fss_extended_read -oqt)
+  lines=$(fss_basic_list_read +Q -cn triggers $workflow_file | fss_extended_read -oqt)
   failure=$?
 
   while [[ $i -lt $lines && $failure -eq 0 ]] ; do
@@ -342,16 +342,16 @@ prepare_workflow_triggers() {
     local -a depths=()
     local -i total=0
 
-    type=$(fss_basic_list_read -cqn triggers $workflow_file | fss_extended_read -oqea $i)
+    type=$(fss_basic_list_read +Q -cn triggers $workflow_file | fss_extended_read -oqea $i)
     failure=$?
 
     if [[ $failure -eq 0 ]] ; then
-      machine=$(fss_basic_list_read -cqn triggers $workflow_file | fss_extended_read -cqaes $i 0)
+      machine=$(fss_basic_list_read +Q -cn triggers $workflow_file | fss_extended_read -cqaes $i 0)
       failure=$?
     fi
 
     if [[ $failure -eq 0 ]] ; then
-      name=$(fss_basic_list_read -cqn triggers $workflow_file | fss_extended_read -cqaes $i 1)
+      name=$(fss_basic_list_read +Q -cn triggers $workflow_file | fss_extended_read -cqaes $i 1)
       failure=$?
     fi
 
@@ -360,7 +360,7 @@ prepare_workflow_triggers() {
       if [[ $? -ne 0 ]] ; then return 1 ; fi
 
       # ID, if supplied is used, otherwise is generated.
-      id=$(fss_basic_list_read -cqn $machine $workflow_file | fss_basic_read -cqns id 0)
+      id=$(fss_basic_list_read +Q -cn $machine $workflow_file | fss_basic_read +Q -cns id 0)
 
       if [[ $? -ne 0 ]] ; then
         echo_error_out "Failed to read the (optional) '${c_n}id$c_e' tasks Object (for trigger '$c_n$machine$c_e') from the workflow '$c_n$workflow$c_e'."

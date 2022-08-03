@@ -84,7 +84,7 @@ saveToLDPSubprocess.loopRef:
   inputDataName extractItem
   parallel false
 
-# (TODO: consider defaulting subprocess start property "type" to "NONE"
+# (TODO: consider defaulting subprocess start property "type" to "NONE")
 saveToLDPSubprocessStart:
   type NONE
 
@@ -106,12 +106,11 @@ okapiLogin.request:
   accept application/json
   bodyTemplate {\"username\": \"{{{username}}}\", \"password\": \"{{{password}}}\"}
 
-# FIXME: add support for having each distinct list represent a different set (currently it just combines them).
-okapiLogin.inputVariables:
+okapiLogin.inputVariables.:
   key username
   type PROCESS
 
-okapiLogin.inputVariables:
+okapiLogin.inputVariables.:
   key password
   type PROCESS
 

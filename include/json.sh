@@ -11,35 +11,27 @@ unload_json_sh() {
 }
 
 # Arguments:
-#   1) depth: Number represents depth within the json structure (each number represens two spaces).
-#             -1 or less designates that this is an map or an array.
-#             -2 or less represents that the depth for an map or array is "abs(#) - 1" such that "#" represents the number (like -2).
-#   2) property: The property "key".
+#   1) depth: Number represents depth within the json structure (each number represents two spaces tabbed from the left) (currently supports a depth up to 4).
+#   2) type:  "value" for value, "array" for start of an array, "map" for start of a map, "object" for an unnamed map, "empty-array" for a complete empty array, and "empty-map" for a complete empty map.
+#   3) property: The property "key".
 #             Property must be an empty string when this represents an "array" type.
-#   3) value: The property "value".
+#             If this represents a valid integer, then this property is to be printed without double quotes.
+#             For all else, then this property is printed wrapped inside double quotes.
+#   4) value: The property "value".
 #             If this exactly matches "null", "true", or "false", the value is to be printed without double quotes.
 #             If this represents a valid integer, then this value is to be printed without double quotes.
+#             For all else, then this value is printed wrapped inside double quotes.
+#             This is ignored when type is something other than "value".
 #
 # The variables "depths", "properties", "values", and "total" are expected to be defined prior to calling this.
 prepare_json_line() {
   local -i depth=$1
-  local property="$2"
-  local value="$3"
+  local type="$2"
+  local property="$3"
+  local value="$4"
   local result=
 
-  if [[ $depth -eq -1 ]] ; then
-    properties["$total"]="\"$property\""
-
-    if [[ $value == "map" ]] ; then
-      values["$total"]="{"
-    elif [[ $value == "array" ]] ; then
-      values["$total"]="["
-    elif [[ $value == "empty-map" ]] ; then
-      values["$total"]="{}"
-    elif [[ $value == "empty-array" ]] ; then
-      values["$total"]="[]"
-    fi
-  else
+  if [[ $type == "value" ]] ; then
     if [[ $property == "" ]] ; then
       properties["$total"]=
     else
@@ -63,11 +55,21 @@ prepare_json_line() {
         values["$total"]="$result"
       fi
     fi
-  fi
+  elif [[ $type == "object" ]] ; then
+    properties["$total"]="";
+    values["$total"]="{"
+  else
+    properties["$total"]="\"$property\""
 
-  if [[ $depth -lt 0 ]] ; then
-    let depth=0-$depth
-    let depth--
+    if [[ $type == "map" ]] ; then
+      values["$total"]="{"
+    elif [[ $type == "array" ]] ; then
+      values["$total"]="["
+    elif [[ $type == "empty-map" ]] ; then
+      values["$total"]="{}"
+    elif [[ $type == "empty-array" ]] ; then
+      values["$total"]="[]"
+    fi
   fi
 
   depths["$total"]="$depth"
@@ -78,7 +80,7 @@ prepare_json_line() {
 
 # Arguments:
 #   1) The depth as described here: prepare_json_line()
-#   2) The type: either "map" or "array".
+#   2) The type: either "map", "object", or "array".
 #
 # This is used to designate the end of an array or map for the purposes of not printing the final ",".
 #
@@ -87,28 +89,31 @@ prepare_json_line_array_or_map_end() {
   local -i depth=$1
   local type="$2"
 
-  if [[ $depth -lt 0 ]] ; then
-    let depth=0-$depth
-    let depth--
-
-    if [[ $type == "map" ]] ; then
-      depths["$total"]=$depth
-      properties["$total"]="map"
-      values["$total"]="}"
-    elif [[ $type == "array" ]] ; then
-      depths["$total"]=$depth
-      properties["$total"]="array"
-      values["$total"]="]"
-    else
-      depths["$total"]=$depth
-    fi
-
-    let total++
+  if [[ $type == "map" ]] ; then
+    depths["$total"]=$depth
+    properties["$total"]="map"
+    values["$total"]="}"
+  elif [[ $type == "object" ]] ; then
+    depths["$total"]=$depth
+    properties["$total"]="object"
+    values["$total"]="}"
+  elif [[ $type == "array" ]] ; then
+    depths["$total"]=$depth
+    properties["$total"]="array"
+    values["$total"]="]"
+  else
+    depths["$total"]=$depth
   fi
+
+  let total++
 
   return 0
 }
 
+# Arguments:
+#   1) The index position to process.
+#   2) The file to print to.
+#   3) Designate that this is a last row.
 populate_json_line() {
   local index="$1"
   local file="$2"
@@ -127,6 +132,12 @@ populate_json_line() {
     echo -n "  " >> $file
   elif [[ $depth -eq 1 ]] ; then
     echo -n "    " >> $file
+  elif [[ $depth -eq 2 ]] ; then
+    echo -n "      " >> $file
+  elif [[ $depth -eq 3 ]] ; then
+    echo -n "        " >> $file
+  elif [[ $depth -eq 4 ]] ; then
+    echo -n "          " >> $file
   fi
 
   if [[ $value == "{" || $value == "[" ]] ; then

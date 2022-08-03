@@ -2,15 +2,15 @@
 # license: gplv3.0 or greater.
 #
 # Program Requirements:
-# - bash 4.x or higher.
-# - grep 3.x or higher (with PCRE support enabled).
-# - fss_basic_list_read 0.5.4 or higher.
-# - fss_extended_read 0.5.4 or higher.
-# - fss_basic_read 0.5.4 or higher.
+#   - bash 4.x or higher.
+#   - grep 3.x or higher (with PCRE support enabled).
+#   - fss_basic_list_read 0.6.x or higher.
+#   - fss_extended_read 0.6.x or higher.
+#   - fss_basic_read 0.6.x or higher.
 #
 # Optional Dependencies:
-# - coreutils that provides dirname.
-# - util-linux that provides uuidgen (optional if all workflows explicitly define UUIDs).
+#   - coreutils that provides dirname.
+#   - util-linux that provides uuidgen (optional if all workflows explicitly define UUIDs).
 #
 # This script is meant to be operated within the directory that it creates the templates and will also expect any individual parts to reside within there (include files, templates, etc..).
 #
@@ -30,16 +30,16 @@
 #
 #   The "triggers" represents the workflow triggers.
 #   Each trigger is broken up into three FSS-0001 (Extended) parts:
-#   - 1) Task Type: Represents name in templates/XXX.fss, with "templates/workflow.fss" being reserved for the workflow.
-#   - 2) Machine Name: Distinctly represents the generated file name, such as "circ-fines/triggers/XXX.json" where "XXX" is the "machine name".
-#   - 3) Human Name: Represents the name presented to the user and is placed as the "name" property in the generated json file.
+#     - 1) Task Type: Represents name in templates/XXX.fss, with "templates/workflow.fss" being reserved for the workflow.
+#     - 2) Machine Name: Distinctly represents the generated file name, such as "circ-fines/triggers/XXX.json" where "XXX" is the "machine name".
+#     - 3) Human Name: Represents the name presented to the user and is placed as the "name" property in the generated json file.
 #
 #   The "tasks" represents the workflow "nodes".
 #   Each task is broken up into three or four FSS-0001 (Extended) parts:
-#   - 1) Task Type: Represents name in templates/XXX.fss, with "templates/workflow.fss" being reserved for the workflow.
-#   - 2) Machine Name: Distinctly represents the generated file name, such as "circ-fines/nodes/XXX.json" where "XXX" is the "machine name".
-#   - 3) Human Name: Represents the name presented to the user and is placed as the "name" property in the generated json file.
-#   - 4) UUID: Represents an optional UUID to represent as the ID. This supercedes any ID specified within the "machine name" list for this task.
+#     - 1) Task Type: Represents name in templates/XXX.fss, with "templates/workflow.fss" being reserved for the workflow.
+#     - 2) Machine Name: Distinctly represents the generated file name, such as "circ-fines/nodes/XXX.json" where "XXX" is the "machine name".
+#     - 3) Human Name: Represents the name presented to the user and is placed as the "name" property in the generated json file.
+#     - 4) UUID: Represents an optional UUID to represent as the ID. This supersedes any ID specified within the "machine name" list for this task.
 #
 #   The "start" and "stop" tasks are automatically created but can be modified using "start" and "stop" "machine names".
 #   The top-level "start" and "stop" tasks are named exactly that but for any subprocess (whose tasks are named "tasks-XXX") the start and stop will be named "XXXStart" and "XXXStop", where XXX is the sub-process "machine name".
@@ -56,7 +56,7 @@
 #   The types include the reserved "workflow.fss" as well as any valid node type, such as "databaseQueryTask.fss".
 #
 #   The templates are meant to be as simple as possible and so they only follow FSS-0000 (Basic).
-#   This works well but because of maps and arrays, the design can be slightly akward in this regard.
+#   This works well but because of maps and arrays, the design can be slightly awkward in this regard.
 #   The json map and json array are represented as Objects containing a "." just like is described in the workflow documentation above.
 #   These "setup.XXX" forms require an initialization property immediately before it and all array/map parts must follow after it, such as:
 #     # fss-0000
@@ -66,21 +66,25 @@
 #     setup.asyncAfter false
 #     initialContext {}
 #
+#   Template values that specify arrays and maps are:
+#     - '[]': Represents an array.
+#     - '{}': Represents a map.
+#
 # Operation:
 #   This is a templating system in which is used to more easily write and generate the workflow json files while avoiding all of the back and forth as well as repitition.
 #
 #   The "settings" Object, any "settings." javascript notation Objects, and the "tasks" are used to generate the main workflow file, such as: "generated/circ-fines/workflow.json".
 #
 #   To achieve this, the program will:
-#   - 1) automatically generate UUIDs for each task and trigger.
-#   - 2) load the template and then append the overrides for each task and trigger.
-#   - 3) create the setup file, such as: "genenrated/circ-fines/setup.json".
-#   - 4) create the workflow file from the tasks and the settings file, such as: "generated/circ-fines/workflow.json".
-#   - 5) each task and trigger will be saved, such as: "generated/circ-fines/nodes/start.json" or "generated/circ-fines/triggers/startTrigger.json".
+#     - 1) Automatically generate UUIDs for each task and trigger.
+#     - 2) Load the template and then append the overrides for each task and trigger.
+#     - 3) Create the setup file, such as: "generated/circ-fines/setup.json".
+#     - 4) Create the workflow file from the tasks and the settings file, such as: "generated/circ-fines/workflow.json".
+#     - 5) Each task and trigger will be saved, such as: "generated/circ-fines/nodes/start.json" or "generated/circ-fines/triggers/startTrigger.json".
 #
 # Notes:
 #   The overrides only need to be populated if there is some need or there is no default value in the template.
-#   This avoids unecessary typing and redundancy.
+#   This avoids unnecessary typing and redundancy.
 #
 #   This does nothing with javascript files.
 #
