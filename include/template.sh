@@ -1,5 +1,7 @@
 #!/bin/bash
-# fw-generate script to be included.
+#
+# An fw-generate script intended to be included by the main script file (usually fw-generate.sh).
+#
 
 unload_template_sh() {
 
@@ -18,8 +20,8 @@ unload_template_sh() {
 #
 # This loads the templates and the workflow data that are described under "tasks" in the workflow.
 load_template_task() {
-  local type="$1"
-  local machine="$2"
+  local type="${1}"
+  local machine="${2}"
   local template_file="${directory_input}templates/${type}.fss"
   local template_object=
   local object=
@@ -33,52 +35,50 @@ load_template_task() {
   local -i lines=0
   local -i template_objects_total=0
 
-  if [[ -f $template_file ]] ; then
-    if [[ ! -r $template_file ]] ; then
-      echo_error_out "The template file '$c_n$template_file$c_e' exists but cannot be read."
+  if [[ -f ${template_file} ]] ; then
+    if [[ ! -r ${template_file} ]] ; then
+      echo_error_out "The template file '${c_n}${template_file}${c_e}' exists but cannot be read."
 
       return 1
     fi
 
-    let template_lines=$(fss_basic_read +Q -ote $template_file)
+    let template_lines=$(fss_basic_read +Qn -ote ${template_file})
     if [[ $? -ne 0 ]] ; then
-      echo_error_out "Failed while trying to read the template file '$c_n$template_file$c_e'."
+      echo_error_out "Failed while trying to read the template file '${c_n}${template_file}${c_e}'."
 
       return 1
     fi
 
-    while [[ $failure_template -eq 0 && $i -lt $template_lines ]] ; do
+    while [[ ${failure_template} -eq 0 && ${i} -lt ${template_lines} ]] ; do
 
-      template_object=$(fss_basic_read +Q -oae $i $template_file)
-      failure_template=$?
-      if [[ $failure_template -ne 0 ]] ; then break ; fi
+      template_object=$(fss_basic_read +Qn -oae ${i} ${template_file})
+      let failure_template=$?
+      if [[ ${failure_template} -ne 0 ]] ; then break ; fi
 
-      content=$(fss_basic_read +Q -cae $i $template_file)
-      failure_template=$?
-      if [[ $failure_template -ne 0 ]] ; then break ; fi
+      content=$(fss_basic_read +Qn -cae ${i} ${template_file})
+      let failure_template=$?
+      if [[ ${failure_template} -ne 0 ]] ; then break ; fi
 
-      if [[ $(echo -n "$template_object" | grep -sPo "\.") == "" && $content != "{}" && $content != "[]" ]] ; then
+      if [[ $(echo -n "$template_object" | grep -sPo "\.") == "" && ${content} != "{}" && ${content} != "[]" ]] ; then
         load_template_task_process_simple
-      elif [[ $content == "{}" || $content == "[]" ]] ; then
+      elif [[ ${content} == "{}" || ${content} == "[]" ]] ; then
          load_template_task_process_complex
       fi
 
       let i++
     done
 
-    if [[ $failure_template -ne 0 ]] ; then
-      echo_error_out "Failed while trying to read the template file '$c_n$template_file$c_e'."
+    if [[ ${failure_template} -ne 0 ]] ; then
+      echo_error_out "Failed while trying to read the template file '${c_n}${template_file}${c_e}'."
 
       return 1
     fi
   fi
 
-  if [[ $failure_workflow -eq 0 ]] ; then
+  if [[ ${failure_workflow} -eq 0 ]] ; then
     load_template_task_workflow
-  fi
-
-  if [[ $failure_workflow -ne 0 ]] ; then
-    echo_error_out "Failed while trying to read the workflow file '$c_n$workflow_file$c_e'."
+  else
+    echo_error_out "Failed while trying to read the workflow file '${c_n}${workflow_file}${c_e}'."
 
     return 1
   fi
@@ -93,17 +93,17 @@ load_template_task() {
 #
 # This requires "j" to be defined in a parent scope and will update "j".
 find_last_array_or_map() {
-  local -i lines=$1
-  local match="$2"
-  local file="$3"
+  local -i lines=${1}
+  local match="${2}"
+  local file="${3}"
   local object=
 
-  while [[ $j -lt $lines ]] ; do
+  while [[ $j -lt ${lines} ]] ; do
 
-    object=$(fss_basic_read +Q -oae $j $file)
+    object=$(fss_basic_read +Qn -oae $j ${file})
     if [[ $? -ne 0 ]] ; then return 1 ; fi
 
-    if [[ $(echo -n "$object" | grep -sPo "^$match\.") == "" && $object != "$match" ]] ; then
+    if [[ $(echo -n "${object}" | grep -sPo "^$match\.") == "" && ${object} != "$match" ]] ; then
       let j--
 
       break;
@@ -129,35 +129,35 @@ load_template_task_process_complex() {
     object_group=$(echo -n "$template_object" | grep -sPo "[^.]+\.$" | grep -sPo "[^.]+")
   fi
 
-  if [[ $content == "[]" ]] ; then
-    total_in_template=$(fss_basic_read +Q -ton "${machine}.$object_group\.$" "$template_file")
-    failure_workflow=$?
-    if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+  if [[ ${content} == "[]" ]] ; then
+    let total_in_template=$(fss_basic_read +Qn -ton "${machine}.${object_group}." "${template_file}")
+    let failure_workflow=$?
+    if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-    total_in_workflow=$(fss_basic_list_read +Q -ton "${machine}.$object_group\.$" "$workflow_file")
-    failure_workflow=$?
-    if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+    let total_in_workflow=$(fss_basic_list_read +Qn -ton "${machine}.${object_group}." "${workflow_file}")
+    let failure_workflow=$?
+    if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-    let total_in_all=$total_in_template+$total_in_workflow
+    let total_in_all=${total_in_template}+${total_in_workflow}
 
-    if [[ $total_in_all -eq 0 ]] ; then
-      prepare_json_line 0 "empty-array" "$object_group"
+    if [[ ${total_in_all} -eq 0 ]] ; then
+      prepare_json_line 0 "empty-array" "${object_group}"
     else
       load_template_task_process_complex_prepare "array"
     fi
-  elif [[ $content == "{}" ]] ; then
-    total_in_template=$(fss_basic_read +Q -ton "${machine}.$object_group$" "$template_file")
-    failure_workflow=$?
-    if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+  elif [[ ${content} == "{}" ]] ; then
+    let total_in_template=$(fss_basic_read +Qn -ton "${machine}.${object_group}" "${template_file}")
+    let failure_workflow=$?
+    if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-    total_in_workflow=$(fss_basic_list_read +Q -ton "${machine}.$object_group$" "$workflow_file")
-    failure_workflow=$?
-    if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+    let total_in_workflow=$(fss_basic_list_read +Qn -ton "${machine}.${object_group}" "${workflow_file}")
+    let failure_workflow=$?
+    if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-    let total_in_all=$total_in_template+$total_in_workflow
+    let total_in_all=${total_in_template}+${total_in_workflow}
 
-    if [[ $total_in_all -eq 0 ]] ; then
-      prepare_json_line 0 "empty-object" "$object_group"
+    if [[ ${total_in_all} -eq 0 ]] ; then
+      prepare_json_line 0 "empty-object" "${object_group}"
     else
       load_template_task_process_complex_prepare "object"
     fi
@@ -172,7 +172,7 @@ load_template_task_process_complex() {
 # This is an extension of load_template_task_process_complex() moved to a separate function for organization purposes.
 # This requires variables from load_template_task_process_complex().
 load_template_task_process_complex_prepare() {
-  local type="$1"
+  local type="${1}"
   local object=
   local content=
   local -i at=0
@@ -180,96 +180,97 @@ load_template_task_process_complex_prepare() {
   local -i at_inside=0
   local -i total_inside=0
 
-  if [[ $total_in_workflow -eq 0 ]] ; then
-    if [[ $total_in_template -eq 0 ]] ; then
-      if [[ $type == "array" ]] ; then
-        prepare_json_line 0 "empty-array" "$object_group"
+  if [[ ${total_in_workflow} -eq 0 ]] ; then
+    if [[ ${total_in_template} -eq 0 ]] ; then
+      if [[ ${type} == "array" ]] ; then
+        prepare_json_line 0 "empty-array" "${object_group}"
       else
-        prepare_json_line 0 "empty-object" "$object_group"
+        prepare_json_line 0 "empty-object" "${object_group}"
       fi
     else
-      prepare_json_line 0 "$type" "$object_group"
+      prepare_json_line 0 "${type}" "${object_group}"
 
-      while [[ $at -lt $total_in_template ]] ; do
+      while [[ ${at} -lt ${total_in_template} ]] ; do
 
-        if [[ $type == "array" ]] ; then
-          object=$(fss_basic_read +Q -ona "${machine}.$object_group\.$" $at "$template_file")
-          content=$(fss_basic_read +Q -cna "${machine}.$object_group\.$" $at "$template_file")
+        if [[ ${type} == "array" ]] ; then
+          object=$(fss_basic_read +Qn -ona "${machine}.${object_group}." ${at} "${template_file}")
+          content=$(fss_basic_read +Qn -cna "${machine}.${object_group}." ${at} "${template_file}")
         else
-          object=$(fss_basic_read +Q -ona "${machine}.$object_group$" $at "$template_file")
-          content=$(fss_basic_read +Q -cna "${machine}.$object_group$" $at "$template_file")
+          object=$(fss_basic_read +Qn -ona "${machine}.${object_group}" ${at} "${template_file}")
+          content=$(fss_basic_read +Qn -cna "${machine}.${object_group}" ${at} "${template_file}")
         fi
 
-        if [[ $content != "[]" && $content != "{}" ]] ; then
-          if [[ $type == "array" ]] ; then
-            prepare_json_line 1 "value" "" "$content"
+        if [[ ${content} != "[]" && ${content} != "{}" ]] ; then
+          if [[ ${type} == "array" ]] ; then
+            prepare_json_line 1 "value" "" "${content}"
           else
-            prepare_json_line 1 "value" "$object" "$content"
+            prepare_json_line 1 "value" "${object}" "${content}"
           fi
 
-          processed="$processed$object_group.$object "
+          processed="${processed}${object_group}.${object} "
         fi
 
         let at++
       done
 
-      prepare_json_line_array_or_map_end 0 $type
+      prepare_json_line_array_or_map_end 0 ${type}
     fi
   else
-    while [[ $at_in_workflow -lt $total_in_workflow ]] ; do
+    while [[ ${at_in_workflow} -lt ${total_in_workflow} ]] ; do
 
-      prepare_json_line 0 "$type" "$object_group"
+      prepare_json_line 0 "${type}" "${object_group}"
 
       let at=0
-      while [[ $at -lt $total_in_template ]] ; do
+      while [[ ${at} -lt ${total_in_template} ]] ; do
 
-        if [[ $type == "array" ]] ; then
-          object=$(fss_basic_read +Q -ona "${machine}.$object_group\.$" $at "$template_file")
-          content=$(fss_basic_read +Q -cna "${machine}.$object_group\.$" $at "$template_file")
+        if [[ ${type} == "array" ]] ; then
+          object=$(fss_basic_read +Qn -ona "${machine}.${object_group}." ${at} "${template_file}")
+          content=$(fss_basic_read +Qn -cna "${machine}.${object_group}." ${at} "${template_file}")
         else
-          object=$(fss_basic_read +Q -ona "${machine}.$object_group$" $at "$template_file")
-          content=$(fss_basic_read +Q -cna "${machine}.$object_group$" $at "$template_file")
+          object=$(fss_basic_read +Qn -ona "${machine}.${object_group}" ${at} "${template_file}")
+          content=$(fss_basic_read +Qn -cna "${machine}.${object_group}" ${at} "${template_file}")
         fi
 
-        if [[ $content != "[]" && $content != "{}" ]] ; then
-          if [[ $type == "array" ]] ; then
-            prepare_json_line 1 "value" "" "$content"
+        if [[ ${content} != "[]" && ${content} != "{}" ]] ; then
+          if [[ ${type} == "array" ]] ; then
+            prepare_json_line 1 "value" "" "${content}"
           else
-            prepare_json_line 1 "value" "$object" "$content"
+            prepare_json_line 1 "value" "${object}" "${content}"
           fi
 
-          processed="$processed$object_group.$object "
+          processed="${processed}${object_group}.${object} "
         fi
 
         let at++
       done
 
-      if [[ $type == "array" ]] ; then
-        total_inside=$(fss_basic_list_read +Q -cna "${machine}.$object_group\.$" $at_in_workflow "$workflow_file" | fss_basic_read +Q -t)
+      if [[ ${type} == "array" ]] ; then
+        let total_inside=$(fss_basic_list_read +Qn -cna "${machine}.${object_group}." ${at_in_workflow} "${workflow_file}" | fss_basic_read +Qn -t)
       else
-        total_inside=$(fss_basic_list_read +Q -cna "${machine}.$object_group$" $at_in_workflow "$workflow_file" | fss_basic_read +Q -t)
+        let total_inside=$(fss_basic_list_read +Qn -cna "${machine}.${object_group}" ${at_in_workflow} "${workflow_file}" | fss_basic_read +Qn -t)
       fi
 
       let at=0
-      while [[ $at -lt $total_inside ]] ; do
+      while [[ ${at} -lt ${total_inside} ]] ; do
 
         # Object should be a quoted empty string, but it is ignored either way.
-        object=$(fss_basic_list_read +Q -cna "${machine}.$object_group\.$" $at_in_workflow "$workflow_file" | fss_basic_read +Q -oa $at "$workflow_file")
-        content=$(fss_basic_list_read +Q -cna "${machine}.$object_group\.$" $at_in_workflow "$workflow_file" | fss_basic_read +Q -ca $at "$workflow_file")
+        object=$(fss_basic_list_read +Qn -cna "${machine}.${object_group}." ${at_in_workflow} "${workflow_file}" | fss_basic_read +Qn -oa ${at} "${workflow_file}")
+        content=$(fss_basic_list_read +Qn -cna "${machine}.${object_group}." ${at_in_workflow} "${workflow_file}" | fss_basic_read +Qn -ca ${at} "${workflow_file}")
 
-        if [[ $content != "[]" && $content != "{}" ]] ; then
-          if [[ $type == "array" ]] ; then
-            prepare_json_line 1 "value" "" "$content"
+        if [[ ${content} != "[]" && ${content} != "{}" ]] ; then
+          if [[ ${type} == "array" ]] ; then
+            prepare_json_line 1 "value" "" "${content}"
           else
-            prepare_json_line 1 "value" "$object" "$content"
+            prepare_json_line 1 "value" "${object}" "${content}"
           fi
 
-          processed="$processed$object_group.$object "
+          processed="${processed}${object_group}.${object} "
         fi
 
         let at++
       done
-      prepare_json_line_array_or_map_end 0 $type
+
+      prepare_json_line_array_or_map_end 0 ${type}
 
       let at_in_workflow++
     done
@@ -287,18 +288,18 @@ load_template_task_process_simple() {
   object_group=
   object_type=
 
-  workflow_object=$(fss_basic_list_read +Q -cna $machine 0 $workflow_file | fss_basic_read +Q -oena $template_object 0)
-  failure_workflow=$?
-  if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+  workflow_object=$(fss_basic_list_read +Qn -cna ${machine} 0 ${workflow_file} | fss_basic_read +Qn -oena $template_object 0)
+  let failure_workflow=$?
+  if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-  if [[ $workflow_object != "" ]] ; then
-    inner_content=$(fss_basic_list_read +Q -cna $machine 0 $workflow_file | fss_basic_read +Q -cena $template_object 0)
-    failure_workflow=$?
-    if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+  if [[ ${workflow_object} != "" ]] ; then
+    inner_content=$(fss_basic_list_read +Qn -cna ${machine} 0 ${workflow_file} | fss_basic_read +Qn -cena $template_object 0)
+    let failure_workflow=$?
+    if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
   fi
 
   prepare_json_line 0 "value" "$template_object" "$inner_content"
-  processed="$processed$template_object "
+  processed="${processed}$template_object "
 
   return 0
 }
@@ -321,39 +322,39 @@ load_template_task_workflow() {
   local -i depth=0
   local -i depth_inner=0
 
-  workflow_objects=$(fss_basic_list_read +Q -o $workflow_file)
-  failure_workflow=$?
-  if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+  workflow_objects=$(fss_basic_list_read +Qn -o ${workflow_file})
+  let failure_workflow=$?
+  if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
   # Build list of workflow objects that are associated with the current task.
-  for workflow_object in $workflow_objects ; do
+  for workflow_object in ${workflow_objects} ; do
 
-    if [[ $workflow_object == "$machine" || $(echo -n $workflow_object | grep -sPo "\b$machine\.[\w+-]+($|\.$)") != "" ]] ; then
-      workflow_objects_task="$workflow_objects_task$workflow_object "
+    if [[ ${workflow_object} == "${machine}" || $(echo -n ${workflow_object} | grep -sPo "\b${machine}\.[\w+-]+($|\.$)") != "" ]] ; then
+      workflow_objects_task="${workflow_objects_task}${workflow_object} "
     fi
   done
 
-  for workflow_object in $workflow_objects_task ; do
+  for workflow_object in ${workflow_objects}_task ; do
 
-    if [[ $(echo -n "$processed_objects" | grep -sPo "(^|\s)\b$workflow_object\b(\s|$)") != "" ]] ; then
+    if [[ $(echo -n "${processed}_objects" | grep -sPo "(^|\s)\b${workflow_object}\b(\s|$)") != "" ]] ; then
       continue;
     fi
 
-    workflow_object_total=$(fss_basic_list_read +Q -onet $workflow_object $workflow_file)
-    failure_workflow=$?
-    if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+    let workflow_object_total=$(fss_basic_list_read +Qn -onet ${workflow_object} ${workflow_file})
+    let failure_workflow=$?
+    if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-    if [[ $workflow_object_total -gt 1 ]] ; then
+    if [[ ${workflow_object_total} -gt 1 ]] ; then
 
       # JSON does not allow multiple duplicate keys in their maps.
       # Force a size to 1 to only build the first key for generated JSON maps.
-      if [[ $(echo -n "$workflow_object" | grep -sPo "\.[^.]+($|\.$)") == "" ]] ; then
+      if [[ $(echo -n "${workflow_object}" | grep -sPo "\.[^.]+($|\.$)") == "" ]] ; then
         let workflow_object_total=1
         let depth=0
       else
         let depth=1
 
-        group_wrapper=$(echo -n "$workflow_object" | grep -sPo "\.[^.]+\.$" | grep -sPo "[^.]+")
+        group_wrapper=$(echo -n "${workflow_object}" | grep -sPo "\.[^.]+\.$" | grep -sPo "[^.]+")
 
         prepare_json_line 0 "array" "$group_wrapper"
       fi
@@ -362,14 +363,14 @@ load_template_task_workflow() {
     fi
 
     let at=0
-    while [[ $at -lt $workflow_object_total ]] ; do
+    while [[ ${at} -lt ${workflow_object_total} ]] ; do
 
-      workflow_content_total=$(fss_basic_list_read +Q -cnaet $workflow_object $at $workflow_file)
-      failure_workflow=$?
-      if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+      let workflow_content_total=$(fss_basic_list_read +Qn -cnaet ${workflow_object} ${at} ${workflow_file})
+      let failure_workflow=$?
+      if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-      if [[ $workflow_content_total -eq 0 && $(echo -n "$workflow_object" | grep -sPo "\.") != "" ]] ; then
-        if [[ $(echo -n "$workflow_object" | grep -sPo "\.$") == "" ]] ; then
+      if [[ ${workflow_content_total} -eq 0 && $(echo -n "${workflow_object}" | grep -sPo "\.") != "" ]] ; then
+        if [[ $(echo -n "${workflow_object}" | grep -sPo "\.$") == "" ]] ; then
           prepare_json_line 0 "empty-map" "$group"
         else
           prepare_json_line 0 "empty-array" "$group"
@@ -381,40 +382,40 @@ load_template_task_workflow() {
       fi
 
       # Process value.
-      if [[ $(echo -n "$workflow_object" | grep -sPo "\.") == "" ]] ; then
+      if [[ $(echo -n "${workflow_object}" | grep -sPo "\.") == "" ]] ; then
         let i=0
-        while [[ $i -lt $workflow_content_total ]] ; do
+        while [[ ${i} -lt ${workflow_content_total} ]] ; do
 
-          object=$(fss_basic_list_read +Q -cnale $workflow_object $at $i $workflow_file | fss_basic_read +Q -o)
-          failure_workflow=$?
-          if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+          object=$(fss_basic_list_read +Qn -cnale ${workflow_object} ${at} ${i} ${workflow_file} | fss_basic_read +Qn -o)
+          let failure_workflow=$?
+          if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-          if [[ $(echo -n "$processed" | grep -sPo "(^|\s)\b$workflow_object[$at]$object\b(\s|$)") != "" ]] ; then
+          if [[ $(echo -n "${processed}" | grep -sPo "(^|\s)\b${workflow_object}[${at}]${object}\b(\s|$)") != "" ]] ; then
             let i++
 
             continue;
           fi
 
-          if [[ $object == "" ]] ; then
+          if [[ ${object} == "" ]] ; then
             let i++
 
             continue
           fi
 
-          content=$(fss_basic_list_read +Q -cnale $workflow_object $at $i $workflow_file | fss_basic_read +Q -c)
-          failure_workflow=$?
-          if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+          content=$(fss_basic_list_read +Qn -cnale ${workflow_object} ${at} ${i} ${workflow_file} | fss_basic_read +Qn -c)
+          let failure_workflow=$?
+          if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-          prepare_json_line 0 "value" "$object" "$content"
+          prepare_json_line 0 "value" "${object}" "${content}"
 
-          processed="$processed$workflow_object[$at]$object "
+          processed="${processed}${workflow_object}[${at}]${object} "
 
           let i++
         done
 
       # Process array/object.
       else
-        group=$(echo -n "$workflow_object" | grep -sPo "\.[^.]+($|\.$)" | grep -sPo "[^.]+")
+        group=$(echo -n "${workflow_object}" | grep -sPo "\.[^.]+($|\.$)" | grep -sPo "[^.]+")
 
         if [[ $group == "" ]] ; then
           let at++
@@ -422,85 +423,85 @@ load_template_task_workflow() {
           continue
         fi
 
-        if [[ $(echo -n "$processed" | grep -sPo "(^|\s)\b$workflow_object\b(\s|$)") != "" ]] ; then
+        if [[ $(echo -n "${processed}" | grep -sPo "(^|\s)\b${workflow_object}\b(\s|$)") != "" ]] ; then
           let at++
 
           continue
         fi
 
         # Process a map Object.
-        if [[ $(echo -n "$workflow_object" | grep -sPo "\.$") == "" ]] ; then
-          prepare_json_line $depth "map" "$group"
+        if [[ $(echo -n "${workflow_object}" | grep -sPo "\.$") == "" ]] ; then
+          prepare_json_line ${depth} "map" "$group"
 
-          total=$(fss_basic_list_read +Q -cnale $workflow_object $at $i $workflow_file | fss_basic_read +Q -t)
-          failure_workflow=$?
-          if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+          let total=$(fss_basic_list_read +Qn -cnale ${workflow_object} ${at} ${i} ${workflow_file} | fss_basic_read +Qn -t)
+          let failure_workflow=$?
+          if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
           let i=0
-          let depth_inner=$depth+1
-          while [[ $i -lt $workflow_content_total ]] ; do
+          let depth_inner=${depth}+1
+          while [[ ${i} -lt ${workflow_content_total} ]] ; do
 
-            object=$(fss_basic_list_read +Q -cnale $workflow_object $at $i $workflow_file | fss_basic_read +Q -o)
-            failure_workflow=$?
-            if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+            object=$(fss_basic_list_read +Qn -cnale ${workflow_object} ${at} ${i} ${workflow_file} | fss_basic_read +Qn -o)
+            let failure_workflow=$?
+            if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-            if [[ $object == "" ]] ; then
+            if [[ ${object} == "" ]] ; then
               let i++
 
               continue
             fi
 
-            content=$(fss_basic_list_read +Q -cnalet $workflow_object $at $i $workflow_file)
-            failure_workflow=$?
-            if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+            content=$(fss_basic_list_read +Qn -cnalet ${workflow_object} ${at} ${i} ${workflow_file})
+            let failure_workflow=$?
+            if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-            prepare_json_line $depth_inner "value" "$object" "$content"
+            prepare_json_line ${depth_inner} "value" "${object}" "${content}"
 
             let i++
           done
 
-          prepare_json_line_array_or_map_end $depth "map"
+          prepare_json_line_array_or_map_end ${depth} "map"
 
         # Process an array object.
         else
-          prepare_json_line $depth "object"
+          prepare_json_line ${depth} "object"
 
           let i=0
-          let depth_inner=$depth+1
-          while [[ $i -lt $workflow_content_total ]] ; do
+          let depth_inner=${depth}+1
+          while [[ ${i} -lt ${workflow_content_total} ]] ; do
 
-            total=$(fss_basic_list_read +Q -cnalet $workflow_object $at $i $workflow_file)
-            failure_workflow=$?
-            if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+            let total=$(fss_basic_list_read +Qn -cnalet ${workflow_object} ${at} ${i} ${workflow_file})
+            let failure_workflow=$?
+            if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-            if [[ $total -eq 0 ]] ; then
+            if [[ ${total} -eq 0 ]] ; then
               let i++
 
               continue
             fi
 
-            content=$(fss_basic_list_read +Q -cnale $workflow_object $at $i $workflow_file | fss_basic_read +Q -c)
-            failure_workflow=$?
-            if [[ $failure_workflow -ne 0 ]] ; then return 1 ; fi
+            content=$(fss_basic_list_read +Qn -cnale ${workflow_object} ${at} ${i} ${workflow_file} | fss_basic_read +Qn -c)
+            let failure_workflow=$?
+            if [[ ${failure_workflow} -ne 0 ]] ; then return 1 ; fi
 
-            prepare_json_line $depth_inner "value" "" "$content"
+            prepare_json_line ${depth_inner} "value" "" "${content}"
 
             let i++
           done
 
-          prepare_json_line_array_or_map_end $depth "object"
+          prepare_json_line_array_or_map_end ${depth} "object"
         fi
       fi
 
       let at++
     done
 
-    if [[ $depth -eq 1 ]] ; then
+    if [[ ${depth} -eq 1 ]] ; then
       prepare_json_line_array_or_map_end 0 "array"
     fi
 
-    processed="$processed$workflow_object "
-    processed_objects="$processed_objects$workflow_object "
+    processed="${processed}${workflow_object} "
+    processed_objects="${processed_objects}${workflow_object} "
   done
 
   return 0

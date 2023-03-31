@@ -3,6 +3,17 @@
 settings:
   id e45271f6-b882-4b6d-801d-2a5243bdab52
   name Extract Coral Items
+  description ""
+  versionTag "1.0"
+  historyTimeToLive 90
+  deploymentId null
+  active false
+  setup {}
+  initialContext {}
+
+settings.setup:
+  asyncBefore false
+  asyncAfter false
 
 tasks:
   startEvent             start                "Start"                               7dac827f-890e-45bc-b5be-13baecc9dc2f

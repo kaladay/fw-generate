@@ -4,13 +4,17 @@
 # Program Requirements:
 #   - bash 4.x or higher.
 #   - grep 3.x or higher (with PCRE support enabled).
-#   - fss_basic_list_read 0.6.x or higher.
-#   - fss_extended_read 0.6.x or higher.
-#   - fss_basic_read 0.6.x or higher.
+#   - fss_basic_list_read 0.6.z, for any z > 3.
+#   - fss_extended_read 0.6.z, for any z > 3.
+#   - fss_basic_read 0.6.z, for any z > 3.
 #
 # Optional Dependencies:
-#   - coreutils that provides dirname.
-#   - util-linux that provides uuidgen (optional if all workflows explicitly define UUIDs).
+#   - Something that provides the "dirname" program, such as coreutils.
+#   - Something that provides "uuidgen", such as util-linux, (optional only if all workflows explicitly define UUIDs).
+#
+# Conditional Dependencies:
+#   - If bash is not available, zsh is supported (zsh 5.8 is known to work).
+#     - To achieve zsh support, set SHELL_ENGINE to "zsh", such as "SHELL_ENGINE=zsh ./fw-generate.sh --help".
 #
 # This script is meant to be operated within the directory that it creates the templates and will also expect any individual parts to reside within there (include files, templates, etc..).
 #
@@ -23,6 +27,11 @@
 #   The FSS-0002 (Basic List) standard doesn't support nested structures, so the Object names will utilize the javascript "." notation for designating a property within a map.
 #
 #   The "settings" (and json notation parts such as "settings.setup") follow FSS-0000 (Basic).
+#   If the Object "id" (within "settings") is not specified or is specified with no Content, then the "id" is created using a generated UUID.
+#
+#   Settings specified in a workflow may override the same named Object specified within the template.
+#   As an exception to this is if the template includes an object or an array (via '{}' or '[]') and the settings only uses the dot notation ('setting.XXX') then those values are appended.
+#   An explicit '{}' or '[]' in the settings would override the same named Object specified within the template.
 #
 #   The "setup" (and json notation parts such as "setup.XXX") follow FSS-0000 (Basic).
 #   To keep things simple, there is currently only support for a single depth structure.
@@ -70,6 +79,18 @@
 #     - '[]': Represents an array.
 #     - '{}': Represents a map.
 #
+#   Once an array or a map is defined, then values may be appended.
+#     - '.': is appended at the end of an array (does not have non-white space on the immediate right of the period).
+#     - '.XXX': is appended at the end of a map where 'XXX' is used to represent some arbitrary map name (the map name must not contain white space).
+#
+#   Special syntax handling for NULL, string, and digits are as follows.
+#     - To use a literal {} or [], enclose them in either single-quotes or double quotes, such as: '{}' or "{}".
+#     - The use of single and double quotes (or lack thereof) is preserved for all other cases (for example "deploymentId null" becomes "deploymentId: null," and "deploymentId 'null'" becomes "deploymentId: 'null',").
+#     - When no value is specified, then an empty string using double quotes is used (for example "description" becomes "description: "",").
+#
+#   The order in which the JSON structure is generated follows the order of the template first and then all new Objects are appended to the JSON.
+#   Any Object that overrides or appends to an Object defined within the template are replaced or appended to in place rather than appended to the JSON.
+#
 # Operation:
 #   This is a templating system in which is used to more easily write and generate the workflow json files while avoiding all of the back and forth as well as repitition.
 #
@@ -110,5 +131,5 @@ else
   source $(dirname $0)/include/workflow.sh
 fi
 
-# this uses $@ in quotes to preserve whitespace in each parameter passed to the script and prevent them from being expanded into different parameters.
+# This uses $@ in quotes to preserve white space in each parameter passed to the script and prevent them from being expanded into different parameters.
 main "$@"
